@@ -49,8 +49,17 @@ public class JSONEquality {
             return false
         }
     }
-    
-    public static func equals<T:Encodable> (_ construct: T, json: String, encoder: JSONEncoder = JSONEncoder()) throws -> Bool {
+
+/**
+     Does **construct** encode to **json**?
+     
+     - parameter construct: The class or struct to be encoded
+     - parameter json: String representation of the **JSON** which the encoded **construct** will be compared to
+     - parameter encoder: Optional encoder used for encoding the **construct**
+     
+     - throws: If **JSON** does not contain proper json or there is an exception encoding.
+*/
+    public static func encodesTo<T:Encodable> (_ construct: T, json: String, encoder: JSONEncoder = JSONEncoder()) throws -> Bool {
         let constructData = try encoder.encode(construct)
         if let constructJson = String (data: constructData, encoding: .utf8) {
             return try JSONEquality.JSONEquals(json, constructJson)
@@ -59,11 +68,21 @@ public class JSONEquality {
         }
     }
     
-    public static func equals<T:Codable> (type: T.Type, json: String, decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) throws -> Bool {
+/**
+     Does **json** successfully decode to construct of **type** and then encode back to **json**?
+     
+     - parameter type: The type of the construct to which **json** should be decoded to.
+     - parameter json: String representation of the JSON to be used for decoding
+     - parameter decoder: Optional decoder used for decoding the **json*
+     - parameter encoder: Optional encoder used for encoding the construct.
+     
+     - throws: If **json** does not contain proper JSON or there is an exception decoding/encoding.
+*/
+    public static func isFullyCodable<T:Codable> (type: T.Type, json: String, decoder: JSONDecoder = JSONDecoder(), encoder: JSONEncoder = JSONEncoder()) throws -> Bool {
         let jsonData = json.data(using: .utf8)
         if let jsonData = jsonData {
             let construct = try decoder.decode(type, from: jsonData)
-            return try JSONEquality.equals (construct, json: json, encoder: encoder)
+            return try JSONEquality.encodesTo (construct, json: json, encoder: encoder)
         } else {
             throw Errors.dataConversionError
         }

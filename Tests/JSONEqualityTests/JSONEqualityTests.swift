@@ -303,9 +303,18 @@ final class JSONEqualityTests: XCTestCase {
 ]
 }
 """
-        
         try XCTAssertTrue (JSONEquality.JSONEquals(json1_1, json1_2))
         try XCTAssertFalse (JSONEquality.JSONEquals(json1_1, json2_1))
+        // Invalid JSON
+        
+        do {
+            let _ = try JSONEquality.JSONEquals("{", "{}")
+            XCTFail("Expected Error")
+        } catch {}
+        do {
+            let _ = try JSONEquality.JSONEquals("{}", "{")
+            XCTFail("Expected Error")
+        } catch {}
     }
     
     
@@ -442,8 +451,80 @@ final class JSONEqualityTests: XCTestCase {
         XCTAssertFalse (JSONEquality.objectsEqual(da1_1 as AnyObject, da3_1 as AnyObject))
     }
     
+    func testEncodesTo() throws {
+        var s1 = MyTestStruct2()
+        s1.m = MyTestStruct1()
+        XCTAssertTrue (try JSONEquality.encodesTo(s1, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}"))
+        XCTAssertFalse (try JSONEquality.encodesTo(s1, json: "{\"d\":1.6,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}"))
+        XCTAssertFalse (try JSONEquality.encodesTo(s1, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.6,\"i\":2,\"b\":false,\"s\":\"B\"}}"))
+        XCTAssertFalse (try JSONEquality.encodesTo(s1, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\",\"extra\":\"e\"}}"))
+        XCTAssertFalse (try JSONEquality.encodesTo(s1, json: "{\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}"))
+        do {
+            let _ = try JSONEquality.encodesTo(s1, json: "\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}")
+            XCTFail("Expected Error")
+        } catch {}
+        s1.m = nil
+        XCTAssertTrue (try JSONEquality.encodesTo(s1, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\"}"))
+    }
+    
+    func testIsFullyCodable() throws {
+        XCTAssertTrue (try JSONEquality.isFullyCodable(type: MyTestStruct2.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}"))
+        XCTAssertTrue (try JSONEquality.isFullyCodable(type: MyTestStruct2.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\"}"))
+        XCTAssertFalse (try JSONEquality.isFullyCodable(type: MyTestStruct2.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\",\"extra\":\"e\"}"))
+        do {
+            let _ = try JSONEquality.isFullyCodable(type: MyTestStruct2.self, json: "{\"i\":1,\"b\":true,\"s\":\"A\",\"m\":{\"d\":2.5,\"i\":2,\"b\":false,\"s\":\"B\"}}")
+            XCTFail ("Expected Error")
+        } catch {}
+        XCTAssertFalse (try JSONEquality.isFullyCodable(type: MyTestStructBadDecode.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\"}"))
+        do {
+            let _ = try JSONEquality.isFullyCodable(type: MyTestStruct2.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\"")
+            XCTFail ("Expected Error")
+        } catch {}
+        XCTAssertFalse (try JSONEquality.isFullyCodable(type: MyTestStructBadDecode.self, json: "{\"d\":1.5,\"i\":1,\"b\":true,\"s\":\"A\"}"))
+    }
+        
+    struct MyTestStruct1 : Codable {
+        var s = "B"
+        var i = 2
+        var d = 2.5
+        var b = false
+    }
+    
+    struct MyTestStruct2 : Codable {
+        var s = "A"
+        var i = 1
+        var d = 1.5
+        var b = true
+        var m: MyTestStruct1? = nil
+    }
+
+    class MyTestStructBadDecode : Codable {
+        
+        enum CodingKeys: String, CodingKey {
+            case s
+            case i
+            case d
+            case b
+        }
+        
+        public required init (from decoder: Decoder) throws {
+            let values = try decoder.container (keyedBy: CodingKeys.self)
+            s = try values.decode (String.self, forKey: .s)
+            i = 100
+            d = try values.decode (Double.self, forKey: .d)
+            b = try values.decode (Bool.self, forKey: .b)
+        }
+        
+        var s = "B"
+        var i = 2
+        var d = 2.5
+        var b = false
+    }
+
     static var allTests = [
         ("testEqualsJsonStrings", testEqualsJsonStrings),
-        ("testEqualsAnyObject", testEqualsAnyObject)
+        ("testEqualsAnyObject", testEqualsAnyObject),
+        ("testEncodesTo", testEncodesTo),
+        ("testIsFullyCodable", testIsFullyCodable)
     ]
 }
