@@ -10,6 +10,6 @@ Add the following to your project's Package.swift package description:
 ```
 ## Usage
 
-See [JSONDictionary.swift](https://github.com/neallester/JSONEquality/blob/master/Sources/JSONEquality/JSONEquality.swift).
+See [JSONEquality.swift](https://github.com/neallester/JSONEquality/blob/master/Sources/JSONEquality/JSONEquality.swift).
 
 
