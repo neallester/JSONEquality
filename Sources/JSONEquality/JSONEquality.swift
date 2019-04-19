@@ -26,6 +26,18 @@ public class JSONEquality {
         }
         return false
     }
+
+    /**
+     Is the Data in the **left** and **right** arguments logically equivalent?
+     
+     - parameter left: Data representing an encoded JSON object
+     - parameter right: Data representing an encoded JSON object
+     
+     - throws: If either argument does not represent a proper JSON object.
+     */
+    public static func JSONEquals (_ left: Data, _ right: Data) throws -> Bool {
+        return try JSONEquals (String (decoding: left, as: UTF8.self), String (decoding: right, as: UTF8.self))
+    }
     
     /**
      Do the contents of the **left** and **right** arguments represent equivalent JSON data?

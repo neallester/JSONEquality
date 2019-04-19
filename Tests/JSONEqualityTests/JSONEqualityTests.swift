@@ -521,10 +521,42 @@ final class JSONEqualityTests: XCTestCase {
         var b = false
     }
 
+    func testDataEquality() throws {
+        
+        struct S1 : Encodable {
+            var i1 = 1
+            var i2 = 2
+            var t1 = "T1"
+            var t2 = "T2"
+        }
+        
+        struct S2 : Encodable {
+            var i10 = 10
+            var i20 = 20
+            var t10 = "T10"
+            var t20 = "T20"
+            var s1 = S1()
+        }
+        
+        let s21 = S2()
+        let s22 = S2()
+        var s23 = S2()
+        s23.s1.i1 = 100
+        let encoder = JSONEncoder()
+        let data21 = try encoder.encode (s21)
+        let data22 = try encoder.encode (s22)
+        let data23 = try encoder.encode (s23)
+        try XCTAssertTrue (JSONEquality.JSONEquals (data21, data22))
+        try XCTAssertFalse (JSONEquality.JSONEquals (data21, data23))
+    }
+
     static var allTests = [
         ("testEqualsJsonStrings", testEqualsJsonStrings),
         ("testEqualsAnyObject", testEqualsAnyObject),
         ("testEncodesTo", testEncodesTo),
-        ("testIsFullyCodable", testIsFullyCodable)
+        ("testIsFullyCodable", testIsFullyCodable),
+        ("testDataEquality", testDataEquality),
     ]
+
 }
+
